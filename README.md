@@ -4,6 +4,14 @@
 
 ## Author
 
+<p align="center">
+  <img
+    src="terminal_profile.gif"
+    alt="Animated terminal profile"
+  />
+</p>
+
+
 **Carlos Magno R. de Assis**  
 AI Engineer | LLMs & RAG | AI Security
 
