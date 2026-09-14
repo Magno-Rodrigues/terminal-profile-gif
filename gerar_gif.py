@@ -1,4 +1,8 @@
 import os
+import shutil
+import subprocess
+import tempfile
+
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -84,6 +88,13 @@ CONFIG = {
     "loop": 0,
     "optimize": False,
     "dither": False,
+
+    # --------------------------------------------------------------------------
+    # COMPRESSÃO LOSSLESS
+    # --------------------------------------------------------------------------
+
+    "otimizar_gif": True,
+    "nivel_otimizacao": 3,
 }
 
 
@@ -194,7 +205,8 @@ COR_VALOR = CONFIG["cor_valor"]
 COR_IDIOMA = CONFIG["cor_idioma"]
 
 GIF_LOOP = CONFIG["loop"]
-GIF_OPTIMIZE = CONFIG["optimize"]
+OTIMIZAR_GIF = CONFIG["otimizar_gif"]
+NIVEL_OTIMIZACAO = CONFIG["nivel_otimizacao"]
 GIF_DITHER = (
     Image.Dither.NONE
     if not CONFIG["dither"]
@@ -799,6 +811,7 @@ def criar_paleta_global(frames):
         COR_PROMPT,
         COR_ROTULO,
         COR_VALOR,
+        COR_IDIOMA,
     ]
 
     for indice, cor in enumerate(
@@ -886,6 +899,88 @@ def validar_configuracao():
                 f"O idioma '{idioma}' "
                 f"não possui linhas."
             )
+
+
+# ==============================================================================
+# COMPRESSÃO LOSSLESS DO GIF
+# ==============================================================================
+
+def otimizar_gif_lossless():
+    """
+    Otimiza estruturalmente o GIF já gerado.
+
+    Não altera resolução, paleta, velocidade ou conteúdo visual.
+    Gifsicle remove/reorganiza dados redundantes entre frames.
+    Se Gifsicle não estiver instalado, o GIF base é mantido intacto.
+    """
+
+    if not OTIMIZAR_GIF:
+        print("Compressão lossless desativada.")
+        return
+
+    gifsicle = shutil.which("gifsicle")
+
+    if gifsicle is None:
+        print()
+        print("AVISO: Gifsicle não encontrado.")
+        print("O GIF foi gerado normalmente, mas não será recompremido.")
+        print("Instale com: sudo apt install gifsicle")
+        return
+
+    caminho = os.path.abspath(NOME_ARQUIVO)
+    tamanho_original = os.path.getsize(caminho)
+
+    with tempfile.NamedTemporaryFile(
+        suffix=".gif",
+        delete=False,
+        dir=os.path.dirname(caminho),
+    ) as arquivo_temporario:
+        caminho_temporario = arquivo_temporario.name
+
+    try:
+        print("Comprimindo GIF com Gifsicle (lossless)...")
+
+        subprocess.run(
+            [
+                gifsicle,
+                f"-O{NIVEL_OTIMIZACAO}",
+                "--careful",
+                caminho,
+                "-o",
+                caminho_temporario,
+            ],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        tamanho_otimizado = os.path.getsize(caminho_temporario)
+
+        if tamanho_otimizado < tamanho_original:
+            os.replace(caminho_temporario, caminho)
+            tamanho_final = tamanho_otimizado
+        else:
+            os.remove(caminho_temporario)
+            tamanho_final = tamanho_original
+
+        reducao = (
+            (1 - tamanho_final / tamanho_original) * 100
+            if tamanho_original
+            else 0
+        )
+
+        print(f"Tamanho antes:  {tamanho_original / 1024:.1f} KB")
+        print(f"Tamanho depois: {tamanho_final / 1024:.1f} KB")
+        print(f"Redução:        {reducao:.1f}%")
+
+    except (subprocess.CalledProcessError, OSError) as erro:
+        if os.path.exists(caminho_temporario):
+            os.remove(caminho_temporario)
+        print()
+        print("AVISO: falha na compressão.")
+        print(f"Detalhes: {erro}")
+        print("O GIF original foi preservado.")
 
 
 # ==============================================================================
@@ -978,10 +1073,12 @@ def main():
         NOME_ARQUIVO,
         save_all=True,
         append_images=frames_paleta[1:],
-        optimize=GIF_OPTIMIZE,
+        optimize=False,
         duration=duracoes_frames,
         loop=GIF_LOOP,
     )
+
+    otimizar_gif_lossless()
 
     print()
     print(
