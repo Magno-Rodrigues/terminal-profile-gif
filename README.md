@@ -11,16 +11,6 @@
   />
 </p>
 
-
-**Carlos Magno R. de Assis**  
-AI Engineer | LLMs & RAG | AI Security
-
-- GitHub: https://github.com/Magno-Rodigues
-- LinkedIn: https://linkedin.com/in/cmrda
-- Email: cmrda@outlook.com
-
----
-
 ## Overview
 
 **Terminal Profile GIF** is a Python-based generator for creating an animated terminal-style developer profile.
