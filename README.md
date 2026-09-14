@@ -21,6 +21,8 @@ The animation can cycle through multiple languages, allowing the same profile to
 
 The project is designed to be easy to customize while keeping the animation behavior deterministic and visually consistent.
 
+The generator can also export the same animation to MP4 using FFmpeg, making it suitable for platforms that do not accept animated GIFs.
+
 ---
 
 ## Features
@@ -40,6 +42,7 @@ The project is designed to be easy to customize while keeping the animation beha
 - Independent colors for prompt, labels, values, and language indicator
 - Global GIF palette for consistent colors across frames
 - Lossless GIF post-processing with Gifsicle
+- MP4 export using FFmpeg
 - Significant file-size reduction without intentional visual quality loss
 - Infinite GIF looping
 - Custom background/profile image
@@ -101,6 +104,7 @@ The language indicator becomes part of the terminal state after it is typed, so 
 - Python 3.9+
 - Pillow
 - Gifsicle
+- FFmpeg (required for MP4 export)
 
 Install Pillow:
 
@@ -115,6 +119,15 @@ On Ubuntu / Debian:
 ```bash
 sudo apt update
 sudo apt install gifsicle
+```
+
+FFmpeg is used to convert the generated GIF into an MP4 video without changing the source animation logic.
+
+On Ubuntu / Debian:
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
 ```
 
 Using a virtual environment is recommended:
@@ -134,6 +147,8 @@ pip install Pillow
 ```
 
 > Gifsicle is an optional post-processing dependency. If it is not installed, the generator still creates the GIF normally and keeps the unoptimized output.
+>
+> FFmpeg is optional if only the GIF is required. If FFmpeg is not available, the GIF is still generated normally and MP4 export is skipped with a warning.
 
 ---
 
@@ -153,14 +168,16 @@ After generation:
 ├── perfil.png
 ├── gerar_gif.py
 ├── terminal_profile.gif
+├── terminal_profile.mp4
 └── README.md
 ```
 
 | File | Description |
 |---|---|
 | `perfil.png` | Background/profile image |
-| `gerar_gif.py` | GIF animation generator |
+| `gerar_gif.py` | GIF and MP4 animation generator |
 | `terminal_profile.gif` | Generated animated profile |
+| `terminal_profile.mp4` | Generated MP4 version of the animation |
 | `README.md` | Project documentation |
 
 ---
@@ -170,7 +187,7 @@ After generation:
 Clone the repository:
 
 ```bash
-git clone https://github.com/Magno-Rodigues/terminal-profile-gif.git
+git clone https://github.com/Magno-Rodrigues/terminal-profile-gif.git
 cd terminal-profile-gif
 ```
 
@@ -207,6 +224,13 @@ sudo apt update
 sudo apt install gifsicle
 ```
 
+Install FFmpeg on Ubuntu / Debian:
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
 ---
 
 # Usage
@@ -229,6 +253,12 @@ The generator creates:
 terminal_profile.gif
 ```
 
+When MP4 export is enabled and FFmpeg is available, it also creates:
+
+```text
+terminal_profile.mp4
+```
+
 After the GIF is generated, Gifsicle performs a lossless optimization pass when enabled in `CONFIG`.
 
 Typical output can be reduced substantially, for example:
@@ -240,6 +270,47 @@ Reduction: ~74%
 ```
 
 The exact result depends on the number of frames, background image, text content, and animation configuration.
+
+## MP4 export
+
+The MP4 is generated from the completed GIF using FFmpeg. This keeps the existing Pillow rendering and animation state machine unchanged.
+
+The conversion pipeline is:
+
+```text
+Pillow
+  ↓
+Animation frames
+  ↓
+Global palette
+  ↓
+Base GIF
+  ↓
+Gifsicle (lossless)
+  ↓
+Optimized GIF
+  ↓
+FFmpeg
+  ↓
+MP4
+```
+
+The default MP4 settings are controlled from `CONFIG`:
+
+```python
+"gerar_mp4": True,
+"nome_arquivo_mp4": "terminal_profile.mp4",
+"fps_mp4": 20,
+"qualidade_mp4": 20,
+```
+
+The exporter uses H.264 with `yuv420p` for broad video compatibility and applies `+faststart` so the MP4 is suitable for web upload and playback.
+
+The GIF remains the primary animation output. MP4 is an additional representation of the same animation for platforms that require video instead of GIF.
+
+If FFmpeg is unavailable, the script prints a warning and continues without failing GIF generation.
+
+For LinkedIn, use the MP4 version when the platform rejects the GIF because of its frame count or GIF-specific limits.
 
 ---
 
@@ -297,6 +368,12 @@ CONFIG = {
     # Lossless compression
     "otimizar_gif": True,
     "nivel_otimizacao": 3,
+
+    # MP4
+    "gerar_mp4": True,
+    "nome_arquivo_mp4": "terminal_profile.mp4",
+    "fps_mp4": 20,
+    "qualidade_mp4": 20,
 }
 ```
 
@@ -440,6 +517,32 @@ produces:
 ```text
 $ LANG=EN | English
 ```
+
+## MP4 export settings
+
+```python
+"gerar_mp4": True
+```
+
+Enables or disables MP4 generation.
+
+```python
+"nome_arquivo_mp4": "terminal_profile.mp4"
+```
+
+Controls the output filename.
+
+```python
+"fps_mp4": 20
+```
+
+Controls the target video frame rate used by the MP4 exporter.
+
+```python
+"qualidade_mp4": 20
+```
+
+Controls the H.264 CRF quality setting. Lower values produce higher quality and larger files; higher values produce smaller files with more compression.
 
 ---
 
@@ -674,6 +777,14 @@ Or:
 ![Animated Terminal Profile](assets/terminal_profile.gif)
 ```
 
+For platforms that require video instead of GIF, use the generated MP4:
+
+```text
+terminal_profile.mp4
+```
+
+The MP4 uses the same animation rendered for the GIF and is intended as a video-compatible alternative rather than a separate animation implementation.
+
 ---
 
 # Recommended workflow
@@ -687,15 +798,19 @@ Run generator
        ↓
 Review GIF
        ↓
+Review MP4 if required
+       ↓
 Adjust timing/layout
        ↓
 Generate again
        ↓
-Lossless optimization
+Lossless GIF optimization
        ↓
-Commit GIF
+MP4 export with FFmpeg
        ↓
-Use in README
+Commit outputs
+       ↓
+Use GIF or MP4 on the target platform
 ```
 
 ---
@@ -733,6 +848,8 @@ The language indicator becomes part of the terminal state after it is typed, so 
 A global palette preserves the configured terminal colors across frames.
 
 Gifsicle is applied only after the GIF has been generated, keeping rendering and compression concerns separated.
+
+FFmpeg is applied after GIF generation and does not alter the animation state machine or rendering logic.
 
 ---
 
@@ -832,6 +949,35 @@ Then run the generator again:
 ```bash
 python gerar_gif.py
 ```
+
+## MP4 is not generated
+
+Check whether FFmpeg is installed:
+
+```bash
+command -v ffmpeg
+```
+
+You can also verify the executable directly:
+
+```bash
+ffmpeg -version
+```
+
+On Ubuntu / Debian:
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+Then run the generator again:
+
+```bash
+python gerar_gif.py
+```
+
+If FFmpeg is unavailable, GIF generation continues normally and only the MP4 export is skipped.
 
 ---
 
