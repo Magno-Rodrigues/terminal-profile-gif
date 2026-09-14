@@ -12,7 +12,7 @@ CONFIG = {
     # ARQUIVOS
     # --------------------------------------------------------------------------
 
-    "nome_arquivo": "terminal_vintage.gif",
+    "nome_arquivo": "terminal_profile.gif",
     "imagem_fundo": "perfil.png",
 
     # --------------------------------------------------------------------------

@@ -140,7 +140,7 @@ After generation:
 .
 ├── perfil.png
 ├── gerar_gif.py
-├── terminal_profile_gif.gif
+├── terminal_profile.gif
 └── README.md
 ```
 
@@ -148,7 +148,7 @@ After generation:
 |---|---|
 | `perfil.png` | Background/profile image |
 | `gerar_gif.py` | GIF animation generator |
-| `terminal_profile_gif.gif` | Generated animated profile |
+| `terminal_profile.gif` | Generated animated profile |
 | `README.md` | Project documentation |
 
 ---
@@ -207,7 +207,7 @@ python gerar_gif.py
 The generator creates:
 
 ```text
-terminal_profile_gif.gif
+terminal_profile.gif
 ```
 
 ---
@@ -220,7 +220,7 @@ Animation behavior is centralized in the `CONFIG` dictionary.
 CONFIG = {
 
     # Files
-    "nome_arquivo": "terminal_profile_gif.gif",
+    "nome_arquivo": "terminal_profile.gif",
     "imagem_fundo": "perfil.png",
 
     # Language order
@@ -594,7 +594,7 @@ Place the generated GIF in your repository, for example:
 
 ```text
 assets/
-└── terminal_profile_gif.gif
+└── terminal_profile.gif
 ```
 
 Then include it in your README:
@@ -602,7 +602,7 @@ Then include it in your README:
 ```html
 <p align="center">
   <img
-    src="assets/terminal_profile_gif.gif"
+    src="assets/terminal_profile.gif"
     alt="Animated terminal profile"
   />
 </p>
@@ -611,7 +611,7 @@ Then include it in your README:
 Or:
 
 ```markdown
-![Animated Terminal Profile](assets/terminal_profile_gif.gif)
+![Animated Terminal Profile](assets/terminal_profile.gif)
 ```
 
 ---
