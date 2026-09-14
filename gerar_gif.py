@@ -40,6 +40,7 @@ CONFIG = {
 
     "duracao_por_caractere": 60,
 
+
     # --------------------------------------------------------------------------
     # INTERVALOS
     # --------------------------------------------------------------------------
@@ -95,6 +96,15 @@ CONFIG = {
 
     "otimizar_gif": True,
     "nivel_otimizacao": 3,
+
+    # --------------------------------------------------------------------------
+    # VÍDEO / LINKEDIN
+    # --------------------------------------------------------------------------
+
+    "gerar_mp4": True,
+    "nome_arquivo_mp4": "terminal_profile.mp4",
+    "fps_mp4": 20,
+    "qualidade_mp4": 20,
 }
 
 
@@ -207,6 +217,11 @@ COR_IDIOMA = CONFIG["cor_idioma"]
 GIF_LOOP = CONFIG["loop"]
 OTIMIZAR_GIF = CONFIG["otimizar_gif"]
 NIVEL_OTIMIZACAO = CONFIG["nivel_otimizacao"]
+
+GERAR_MP4 = CONFIG["gerar_mp4"]
+NOME_ARQUIVO_MP4 = CONFIG["nome_arquivo_mp4"]
+FPS_MP4 = CONFIG["fps_mp4"]
+QUALIDADE_MP4 = CONFIG["qualidade_mp4"]
 GIF_DITHER = (
     Image.Dither.NONE
     if not CONFIG["dither"]
@@ -987,6 +1002,62 @@ def otimizar_gif_lossless():
 # MAIN
 # ==============================================================================
 
+# ==============================================================================
+# EXPORTAÇÃO MP4
+# ==============================================================================
+
+def exportar_mp4(caminho_gif, caminho_mp4):
+    """Converte o GIF final diretamente para MP4 usando FFmpeg.
+
+    O GIF já contém a animação original e foi otimizado com Gifsicle.
+    A conversão direta evita gerar milhares de PNGs temporários e
+    preserva a temporização dos frames. O padding torna as dimensões
+    compatíveis com H.264/yuv420p.
+    """
+    ffmpeg = shutil.which("ffmpeg")
+
+    if not ffmpeg:
+        print("FFmpeg não encontrado. MP4 não será gerado.")
+        print("Instale o FFmpeg para habilitar a exportação de vídeo.")
+        return False
+
+    comando = [
+        ffmpeg,
+        "-y",
+        "-i",
+        str(caminho_gif),
+        "-vf",
+        "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+        "-movflags",
+        "+faststart",
+        "-c:v",
+        "libx264",
+        "-crf",
+        str(QUALIDADE_MP4),
+        "-pix_fmt",
+        "yuv420p",
+        str(caminho_mp4),
+    ]
+
+    print("Convertendo GIF para MP4 com FFmpeg...")
+
+    try:
+        resultado = subprocess.run(
+            comando,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as erro:
+        print("Erro ao gerar MP4 com FFmpeg.")
+        if erro.stderr:
+            print(erro.stderr.strip())
+        return False
+
+    print(f"MP4 gerado com sucesso: {caminho_mp4}")
+    return True
+
+
 def main():
 
     validar_configuracao()
@@ -1079,6 +1150,13 @@ def main():
     )
 
     otimizar_gif_lossless()
+
+    if GERAR_MP4:
+        exportar_mp4(
+            NOME_ARQUIVO,
+            NOME_ARQUIVO_MP4,
+        )
+
 
     print()
     print(
