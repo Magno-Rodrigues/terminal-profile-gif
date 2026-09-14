@@ -39,6 +39,8 @@ The project is designed to be easy to customize while keeping the animation beha
 - Configurable prompt and cursor characters
 - Independent colors for prompt, labels, values, and language indicator
 - Global GIF palette for consistent colors across frames
+- Lossless GIF post-processing with Gifsicle
+- Significant file-size reduction without intentional visual quality loss
 - Infinite GIF looping
 - Custom background/profile image
 - Easy addition of new languages
@@ -98,11 +100,21 @@ The language indicator becomes part of the terminal state after it is typed, so 
 
 - Python 3.9+
 - Pillow
+- Gifsicle
 
 Install Pillow:
 
 ```bash
 pip install Pillow
+```
+
+Gifsicle is used as a post-processing step to losslessly optimize the generated GIF and reduce its file size.
+
+On Ubuntu / Debian:
+
+```bash
+sudo apt update
+sudo apt install gifsicle
 ```
 
 Using a virtual environment is recommended:
@@ -120,6 +132,8 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install Pillow
 ```
+
+> Gifsicle is an optional post-processing dependency. If it is not installed, the generator still creates the GIF normally and keeps the unoptimized output.
 
 ---
 
@@ -186,6 +200,13 @@ Install Pillow:
 pip install Pillow
 ```
 
+Install Gifsicle on Ubuntu / Debian:
+
+```bash
+sudo apt update
+sudo apt install gifsicle
+```
+
 ---
 
 # Usage
@@ -207,6 +228,18 @@ The generator creates:
 ```text
 terminal_profile.gif
 ```
+
+After the GIF is generated, Gifsicle performs a lossless optimization pass when enabled in `CONFIG`.
+
+Typical output can be reduced substantially, for example:
+
+```text
+Before:  ~1.9 MB
+After:   ~0.5 MB
+Reduction: ~74%
+```
+
+The exact result depends on the number of frames, background image, text content, and animation configuration.
 
 ---
 
@@ -260,6 +293,10 @@ CONFIG = {
     "loop": 0,
     "optimize": False,
     "dither": False,
+
+    # Lossless compression
+    "otimizar_gif": True,
+    "nivel_otimizacao": 3,
 }
 ```
 
@@ -430,7 +467,7 @@ IDIOMAS = {
             " ",
             "CONTACT",
             "Email: ....... cmrda@outlook.com",
-            "GitHub: ...... Magno-Rodigues",
+            "GitHub: ...... Magno-Rodrigues",
             "LinkedIn: .... linkedin.com/in/cmrda",
         ],
     },
@@ -461,7 +498,7 @@ Add a new entry to `IDIOMAS`:
         " ",
         "CONTACT",
         "Email: ....... cmrda@outlook.com",
-        "GitHub: ...... Magno-Rodigues",
+        "GitHub: ...... Magno-Rodrigues",
         "LinkedIn: .... linkedin.com/in/cmrda",
     ],
 },
@@ -561,13 +598,38 @@ Dithering is disabled by default:
 "dither": False
 ```
 
-GIF optimization is also disabled:
+The base GIF is generated with Pillow using the global palette and without Pillow's additional GIF optimization. A separate Gifsicle post-processing step then performs structural, lossless optimization.
 
-```python
-"optimize": False
+This separation keeps the existing rendering and color behavior intact while significantly reducing the final file size.
+
+## Lossless GIF optimization
+
+Gifsicle is used after Pillow finishes generating the GIF:
+
+```text
+Pillow
+  ↓
+Animation frames
+  ↓
+Global palette
+  ↓
+Base GIF
+  ↓
+Gifsicle (lossless)
+  ↓
+Optimized GIF
 ```
 
-This prioritizes visual consistency over maximum file-size reduction.
+The optimization does not intentionally resize, recolor, or reduce the visual quality of the animation. It focuses on removing redundant GIF data and optimizing frame structure.
+
+The feature is enabled by default:
+
+```python
+"otimizar_gif": True,
+"nivel_otimizacao": 3,
+```
+
+If Gifsicle is unavailable, the script preserves the generated GIF and displays a warning instead of failing the generation process.
 
 ---
 
@@ -629,6 +691,8 @@ Adjust timing/layout
        ↓
 Generate again
        ↓
+Lossless optimization
+       ↓
 Commit GIF
        ↓
 Use in README
@@ -667,6 +731,8 @@ Previously completed lines are redrawn for every frame, preventing artifacts cau
 The language indicator becomes part of the terminal state after it is typed, so it remains visible during the corresponding profile cycle.
 
 A global palette preserves the configured terminal colors across frames.
+
+Gifsicle is applied only after the GIF has been generated, keeping rendering and compression concerns separated.
 
 ---
 
@@ -746,6 +812,27 @@ For example:
 "intervalo_entre_ciclos": 3000
 ```
 
+## GIF is not compressed
+
+Check whether Gifsicle is installed:
+
+```bash
+command -v gifsicle
+```
+
+On Ubuntu / Debian, install it with:
+
+```bash
+sudo apt update
+sudo apt install gifsicle
+```
+
+Then run the generator again:
+
+```bash
+python gerar_gif.py
+```
+
 ---
 
 # License
@@ -771,7 +858,7 @@ AI Engineer focused on:
 - Data Analytics
 - Power BI
 
-- GitHub: https://github.com/Magno-Rodigues
+- GitHub: https://github.com/Magno-Rodrigues
 - LinkedIn: https://linkedin.com/in/cmrda
 - Email: cmrda@outlook.com
 
